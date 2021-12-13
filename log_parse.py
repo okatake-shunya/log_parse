@@ -1,3 +1,6 @@
+import glob
+import re
+import os
 import re
 import pandas as pd
 from datetime import datetime, date, timedelta
@@ -15,37 +18,32 @@ len_list = []
 
 i = 0
 
-with open('test.txt', mode='rt', encoding='utf-8') as f:
-    for line in f:
-        l = line.split()
-        #Nov/27/2021 14:41:46 → 2021/11/27 14:41:46 の形へ
-        date_list.append(datetime.strptime(str(l[0]+" "+l[1]), '%b/%d/%Y %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S'))
-        interface_list.append((l[6].lstrip('out:')).rstrip(','))
-        macaddress_list.append(l[8].rstrip(','))
-        protcol_list.append(l[10].rstrip(','))
+yesterday = datetime.strftime(datetime.today() - timedelta(days=1), '%Y-%m-%d')
 
-        if protcol_list[i] == "TCP":
-            ip = re.split('[->,:]',l[12])
-            src_ip_list.append(ip[0])
-            src_port_list.append(ip[1])
-            dst_ip_list.append(ip[3])
-            dst_port_list.append(ip[4])
-            len_list.append(l[14])
-        else:
-            ip = re.split('[->,:]',l[11])
-            src_ip_list.append(ip[0])
-            src_port_list.append(ip[1])
-            dst_ip_list.append(ip[3])
-            dst_port_list.append(ip[4])
-            len_list.append(l[13])
-        
-        i+=1
+for filename in glob.glob("test_dir/*"):
+    with open(os.path.join(os.getcwd(), filename), mode='rt', encoding='utf-8') as f:
+        for line in f:
+            l = line.split()
+            if len(l) == 15 and l[10] == "TCP" and l[4] == 'forward:':
+                #Nov/27/2021 14:41:46 → 2021/11/27 14:41:46 の形へ
+                date_list.append(datetime.strptime(str(l[0]+" "+l[1]), '%b/%d/%Y %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S'))
+                interface_list.append((l[6].lstrip('out:')).rstrip(','))
+                macaddress_list.append(l[8].rstrip(','))
+                protcol_list.append(l[10].rstrip(','))
+                ip = re.split('[->,:]',l[12])
+                src_ip_list.append(ip[0])
+                src_port_list.append(ip[1])
+                dst_ip_list.append(ip[3])
+                dst_port_list.append(ip[4])
+                len_list.append(l[14])
+
+                i+=1
 
 
-csv_dict = {
+log_dict = {
     'timestamp': date_list,
     'I/F': interface_list,
-    'mac addres': macaddress_list,
+    'macaddres': macaddress_list,
     'protcol': protcol_list,
     'src_ip': src_ip_list,
     'src_port': src_port_list,
@@ -54,7 +52,21 @@ csv_dict = {
     'len': len_list
 }
 
-df = pd.DataFrame(csv_dict,columns=['timestamp','I/F','mac addres','protcol','src_ip','src_port','dst_ip','dst_port','len'])
+df = pd.DataFrame(log_dict,columns=['timestamp','I/F','macaddres','protcol','src_ip','src_port','dst_ip','dst_port','len'])
 df['timestamp'] = pd.to_datetime(df['timestamp'])
 df = df.drop_duplicates()
 df = df.set_index('timestamp')
+
+
+#dfa = df[yesterday:yesterday]
+dfa = df.sort_index().loc[yesterday:yesterday]
+
+print("----------------------------------------")
+print(dfa.value_counts("protcol"))
+print("----------------------------------------")
+print(dfa.value_counts("I/F"))
+print("----------------------------------------")
+print(dfa.value_counts("dst_port").head(30))
+print("----------------------------------------")
+print(dfa.value_counts("macaddres").head(30))
+
