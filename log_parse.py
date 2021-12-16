@@ -73,9 +73,9 @@ while f < 24:
     yesterday_hour = datetime.strptime(yesterday_time, '%Y-%m-%d %H:%M:%S') + timedelta(hours=+f)
     
     access_dt.append(yesterday_hour.strftime('%H:%M:%S'))
-    f += 1
     yesterday_1hour = datetime.strptime(yesterday_59time, '%Y-%m-%d %H:%M:%S') + timedelta(hours=+f)
     
+    f += 1
     df_time = dfa.sort_index().loc[yesterday_hour:yesterday_1hour]
     print("****************************************")
     print(yesterday_hour)
