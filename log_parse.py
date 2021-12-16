@@ -16,10 +16,6 @@ dst_ip_list = []
 dst_port_list = []
 len_list = []
 
-i = 0
-
-yesterday = datetime.strftime(datetime.today() - timedelta(days=1), '%Y-%m-%d')
-
 for filename in glob.glob("test_dir/*"):
     with open(os.path.join(os.getcwd(), filename), mode='rt', encoding='utf-8') as f:
         for line in f:
@@ -36,8 +32,6 @@ for filename in glob.glob("test_dir/*"):
                 dst_ip_list.append(ip[3])
                 dst_port_list.append(ip[4])
                 len_list.append(l[14])
-
-                i+=1
 
 
 log_dict = {
@@ -57,8 +51,8 @@ df['timestamp'] = pd.to_datetime(df['timestamp'])
 df = df.drop_duplicates()
 df = df.set_index('timestamp')
 
+yesterday = datetime.strftime(datetime.today() - timedelta(days=1), '%Y-%m-%d')
 
-#dfa = df[yesterday:yesterday]
 dfa = df.sort_index().loc[yesterday:yesterday]
 
 print("----------------------------------------")
@@ -70,3 +64,43 @@ print(dfa.value_counts("dst_port").head(30))
 print("----------------------------------------")
 print(dfa.value_counts("macaddres").head(30))
 
+access = []
+access_dt = []
+f = 0
+while f < 24:
+    yesterday_time = datetime.strftime(datetime.today() - timedelta(days=1), '%Y-%m-%d 00:00:00')
+    yesterday_59time = datetime.strftime(datetime.today() - timedelta(days=1), '%Y-%m-%d 00:59:59')
+    yesterday_hour = datetime.strptime(yesterday_time, '%Y-%m-%d %H:%M:%S') + timedelta(hours=+f)
+    
+    access_dt.append(yesterday_hour.strftime('%H:%M:%S'))
+    f += 1
+    yesterday_1hour = datetime.strptime(yesterday_59time, '%Y-%m-%d %H:%M:%S') + timedelta(hours=+f)
+    
+    df_time = dfa.sort_index().loc[yesterday_hour:yesterday_1hour]
+    print("****************************************")
+    print(yesterday_hour)
+    print("----------------------------------------")
+    print(df_time.value_counts("protcol"))
+    print("----------------------------------------")
+    print(df_time.value_counts("I/F"))
+    print("----------------------------------------")
+    print(df_time.value_counts("dst_port").head(5))
+    print("----------------------------------------")
+    print(df_time.value_counts("macaddres").head(5))
+    
+    
+    access.append(df_time['protcol'].count())
+
+print("----------------------------------------")
+log_dict_2 = {
+    'time': access_dt,
+    'access': access,
+}
+
+
+import matplotlib.pyplot as plt
+
+df2 = pd.DataFrame(log_dict_2,columns=['time','access'])
+
+df2.plot(x="time", y="access", kind="bar")
+plt.show()
