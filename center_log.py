@@ -15,7 +15,7 @@ for filename in glob.glob("fujisoft_ccr/*"):
     with open(os.path.join(os.getcwd(), filename), mode='rt', encoding='utf-8') as f:
         for line in f:
             l = line.split()
-            if l[4] == "UNREACH:":
+            if l[4] == "UNREACH:"  and l[11] == "3," and l[13] == "13)," and str(l[14])[:3] == "14.":
                 #Nov/27/2021 14:41:46 → 2021/11/27 14:41:46 の形へ
                 date_list.append(datetime.strptime(str(l[0]+" "+l[1]), '%b/%d/%Y %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S'))
                 in_list.append(l[6].replace('in:', ''))
